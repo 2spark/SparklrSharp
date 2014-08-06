@@ -16,13 +16,13 @@ namespace SparklrSharp
             return await extractPostsAsync(response);
         }
 
-        internal async Task<Post[]> GetStreamSinceAsync(string name, int timestamp)
+        internal async Task<Post[]> GetStreamSinceAsync(string name, long timestamp)
         {
             SparklrResponse<JSONRepresentations.Get.Post[]> response = await webClient.GetJSONResponseAsync<JSONRepresentations.Get.Post[]>("stream", name + "?since=" + timestamp);
             return await extractPostsAsync(response);
         }
 
-        internal async Task<Post[]> GetStreamAsync(string name, int starttime)
+        internal async Task<Post[]> GetStreamAsync(string name, long starttime)
         {
             SparklrResponse<JSONRepresentations.Get.Post[]> response = await webClient.GetJSONResponseAsync<JSONRepresentations.Get.Post[]>("stream", name + "?starttime=" + starttime);
             return await extractPostsAsync(response);
@@ -30,16 +30,17 @@ namespace SparklrSharp
 
         private async Task<Post[]> extractPostsAsync(SparklrResponse<JSONRepresentations.Get.Post[]> response)
         {
-            Post[] posts = new Post[response.Response.Length];
+            List<Post> posts = new List<Post>();
 
-            int i = 0;
             foreach (JSONRepresentations.Get.Post p in response.Response)
             {
-                posts[i] = await Post.InstanciatePostAsync(p, this);
-                i++;
+                Post po = await Post.InstanciatePostAsync(p, this);
+
+                if (p != null)
+                    posts.Add(po);
             }
 
-            return posts;
+            return posts.ToArray();
         }
     }
 }

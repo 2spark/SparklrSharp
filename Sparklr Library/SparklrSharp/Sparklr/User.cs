@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SparklrSharp.Sparklr;
+using SparklrSharp.Extensions;
 
 namespace SparklrSharp.Sparklr
 {
@@ -48,19 +50,30 @@ namespace SparklrSharp.Sparklr
         public string Bio { get; private set; }
 
         /// <summary>
-        /// The recent posts of this user.
+        /// Retreives the Timeline for the user asynchronously. The timeline will be retreived from memory, if the posts already have been loaded.
         /// </summary>
-        public ReadOnlyCollection<Post> Timeline
+        /// <param name="conn">The connection on which to run the query</param>
+        /// <returns>A read only collection</returns>
+        public async Task<ReadOnlyCollection<Post>> GetTimelineAsync(Connection conn)
         {
-            get
+            // TODO: Check if timeline has new posts
+            if(timeline == null)
             {
-                return new ReadOnlyCollection<Post>(timeline);
+                timeline = new List<Post>();
+
+                foreach(JSONRepresentations.Get.Post p in rawTimeline)
+                {
+                    timeline.Add(await(Post.InstanciatePostAsync(p, conn)));
+                }
             }
+            return new ReadOnlyCollection<Post>(timeline);
         }
 
         internal List<Post> timeline { get; private set; }
+        internal List<JSONRepresentations.Get.Post> rawTimeline { get; private set; }
 
         private static Dictionary<int, User> userCache = new Dictionary<int, User>();
+        private static HashSet<int> deletedUsers = new HashSet<int>();
 
         /// <summary>
         /// Handles the creation of instances. Only one instance of a user can exist at a time.
@@ -68,12 +81,24 @@ namespace SparklrSharp.Sparklr
         /// <param name="userid">The userid of the specified user</param>
         /// <param name="conn">The connection on which to run the identification</param>
         /// <returns></returns>
-        internal static async Task<User> InstanciateUserAsync(int userid, Connection conn)
+        public static async Task<User> InstanciateUserAsync(int userid, Connection conn)
         {
-            if (!userCache.ContainsKey(userid))
+            if(deletedUsers.Contains(userid))
             {
-                User u = await conn.GetUserAsync(userid);
-                //This will always add the User to the cache
+                return User.DeletedUser;
+            }
+            else if (!userCache.ContainsKey(userid))
+            {
+                try
+                {
+                    User u = await conn.GetUserAsync(userid);
+                    //This will always add the User to the cache, do not add user to cache here!
+                }
+                catch(Exceptions.NoDataFoundException)
+                {
+                    deletedUsers.Add(userid);
+                    return User.DeletedUser;
+                }
             }
 
             return userCache[userid];
@@ -108,7 +133,7 @@ namespace SparklrSharp.Sparklr
             this.Following = following;
             this.Bio = bio;
 
-            this.timeline = new List<Post>();
+            this.rawTimeline = new List<JSONRepresentations.Get.Post>();
         }
     }
 }

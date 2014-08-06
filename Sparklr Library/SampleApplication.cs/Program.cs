@@ -150,7 +150,7 @@ namespace SampleApplication.cs
                     }
                     suppressOutput = false;
 
-                    //Finally we send a message on our own
+                    //And now we send a message on our own
                     Console.WriteLine("Enter a message to send (or press enter to skip)");
 
                     suppressOutput = true;
@@ -162,6 +162,28 @@ namespace SampleApplication.cs
                         await conversation.SendMessage(content);
                     }
                 }
+
+                // And now we send a message on our own
+                Console.WriteLine("Enter a post to send (or press enter to skip)");
+
+                suppressOutput = true;
+                string post = Console.ReadLine();
+                suppressOutput = false;
+
+                if (post != String.Empty)
+                {
+                    bool result = await conn.SubmitPostAsync(post);
+
+                    if(result)
+                    {
+                        Console.WriteLine("Post sent succesfully");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Something went wrong");
+                    }
+                }
+
 
                 //Finally we sign out.
                 await conn.SignoffAsync();

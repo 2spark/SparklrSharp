@@ -1,0 +1,7 @@
+test: off
+
+artifacts:
+  - path: Sparklr Library\SparklrSharp\bin\Debug
+    name: DEBUG
+  - path: Sparklr Library\SparklrSharp\bin\Release
+    name: RELEASE
